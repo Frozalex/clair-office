@@ -28,12 +28,10 @@ beforeEach(() => {
   HTMLElement.prototype.scrollIntoView = () => {};
   vi.stubGlobal(
     "fetch",
-    vi
-      .fn()
-      .mockResolvedValue({
-        ok: false,
-        json: async () => ({ available: false }),
-      }),
+    vi.fn().mockResolvedValue({
+      ok: false,
+      json: async () => ({ available: false }),
+    }),
   );
 });
 afterEach(() => {
