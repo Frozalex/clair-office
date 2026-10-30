@@ -1,4 +1,4 @@
-/** Preserve PNG/JPEG aspect ratio when exporting a document. */
+/** Read raster geometry without fetching assets or decoding pixels. */
 export function imageDimensions(data: Uint8Array): {
   width: number;
   height: number;
@@ -6,6 +6,29 @@ export function imageDimensions(data: Uint8Array): {
   const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
   if (data.length >= 24 && view.getUint32(0) === 0x89504e47)
     return { width: view.getUint32(16), height: view.getUint32(20) };
+  if (
+    data.length >= 30 &&
+    view.getUint32(0) === 0x52494646 &&
+    view.getUint32(8) === 0x57454250
+  ) {
+    const type = view.getUint32(12);
+    if (type === 0x56503858)
+      return {
+        width: 1 + data[24] + (data[25] << 8) + (data[26] << 16),
+        height: 1 + data[27] + (data[28] << 8) + (data[29] << 16),
+      };
+    if (type === 0x56503820)
+      return {
+        width: view.getUint16(26, true) & 0x3fff,
+        height: view.getUint16(28, true) & 0x3fff,
+      };
+    if (type === 0x5650384c)
+      return {
+        width: 1 + data[21] + ((data[22] & 0x3f) << 8),
+        height:
+          1 + (data[22] >> 6) + (data[23] << 2) + ((data[24] & 0xf) << 10),
+      };
+  }
   if (data[0] === 0xff && data[1] === 0xd8) {
     let offset = 2;
     while (offset + 8 < data.length) {

@@ -258,13 +258,26 @@ export async function createPptx(item: PresentationItem): Promise<Blob> {
             line: { color: el.color.slice(1), transparency: 100 },
           },
         );
-      else
+      else {
+        const bytes = Uint8Array.from(atob(el.src.split(",")[1]), (c) =>
+          c.charCodeAt(0),
+        );
+        const natural = imageDimensions(bytes);
+        const ratio = Math.min(
+          box.w / Math.max(1, natural.width),
+          box.h / Math.max(1, natural.height),
+        );
+        const w = natural.width * ratio,
+          h = natural.height * ratio;
         slide.addImage({
           data: el.src,
-          ...box,
+          x: box.x + (box.w - w) / 2,
+          y: box.y + (box.h - h) / 2,
+          w,
+          h,
           altText: el.alt,
-          sizing: { type: "contain", w: box.w, h: box.h },
         });
+      }
     }
   }
   return (await pptx.write({ outputType: "blob" })) as Blob;
